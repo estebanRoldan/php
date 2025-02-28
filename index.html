@@ -12,11 +12,72 @@
 </script>
 </head>
 <body>
-
+<button id="btnSave">Click this to install the app</button>
+<pre id="output">Deferred Prompt shown</pre>
 <div id="text"></div>
  <script>
     var a = document.getElementById("text");
     a.innerHTML = "javascript";
  </script>
+
+ <script>
+  
+  window.addEventListener('load', function() {
+  
+  var outputElement = document.getElementById('output');
+  var btnSave = document.getElementById('btnSave');
+  var deferredPrompt;
+
+  navigator.serviceWorker.register('sw.js', { scope: './' })
+    .then(function(r) {
+      console.log('registered service worker');
+    })
+    .catch(function(whut) {
+      console.error('uh oh... ');
+      console.error(whut);
+    });
+  
+  window.addEventListener('beforeinstallprompt', function(e) {
+    console.log('beforeinstallprompt Event fired');
+    e.preventDefault();
+    
+    // Enable the button.
+    btnSave.removeAttribute('disabled');
+    
+    // Stash the event so it can be triggered later.
+    deferredPrompt = e;
+    
+    return false;
+  });
+  
+  btnSave.addEventListener('click', function() {
+    if (deferredPrompt !== undefined) {
+      // The user has had a postive interaction with our app and Chrome
+      // has tried to prompt previously, so let's show the prompt.
+      deferredPrompt.prompt();
+      
+      outputElement.textContent = 'Deferred Prompt shown';
+    
+      // Follow what the user has selected.
+      deferredPrompt.userChoice.then(function(choiceResult) {
+        
+        console.log(choiceResult.outcome);
+        
+        if (choiceResult.outcome == 'dismissed') {
+          console.log('User cancelled homescreen install');
+        }
+        else {
+          console.log('User added to homescreen');
+        }
+        
+        // We no longer need the prompt.  Clear it up.
+        deferredPrompt = null;
+      });
+    }
+  });
+});
+
+
+</script>   
 </body>
 </html>
